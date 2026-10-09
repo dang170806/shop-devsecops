@@ -1,0 +1,84 @@
+<div class="menu-container"
+     xmlns:th="http://www.thymeleaf.org"
+     xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top"
+         style="background-color:#FFFFFF; z-index:1030"
+         id="nav-main">
+        <div class="logo">
+            <a class="nav-link" th:href="@{/}">
+                <img src="https://bizweb.dktcdn.net/100/328/362/themes/894751/assets/logo.png?1676257083798"
+                     alt="logo">
+            </a>
+        </div>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" th:href="@{/}">Home <span class="sr-only">(current)</span></a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/productList}">Introduction</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/productList}">Products</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/news}">News</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/shoppingCart}">Cart</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/web/buildings/contact}">Contact</a>
+                </li>
+
+                <th:block sec:authorize="hasAnyRole('MANAGER','STAFF')">
+                    <li class="nav-item">
+                        <a th:href="@{/admin/orderList}" class="nav-link">
+                            Order List
+                        </a>
+                    </li>
+
+                </th:block>
+                <th:block sec:authorize="hasRole('MANAGER')">
+                    <li class="nav-item">
+                        <a th:href="@{/admin/building}" class="nav-link">
+                            Create Product
+                        </a>
+                    </li>
+                </th:block>
+
+
+                <th:block sec:authorize="isAuthenticated()">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" th:href="@{/admin/accountInfo}"
+                           th:utext="${#authentication.name}" id="navbarDropdown" role="button" data-toggle="dropdown"
+                           aria-haspopup="true" aria-expanded="false">
+                            Hello
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <form th:action="@{/admin/logout}" method="post" class="m-0">
+                                <button type="submit" class="dropdown-item">Logout</button>
+                            </form>
+                        </div>
+                    </li>
+                </th:block>
+            </ul>
+            <ul class="navbar-nav ml-auto">
+                <th:block sec:authorize="!isAuthenticated()">
+                    <li class="nav-item">
+                        <a th:href="@{/admin/login}" class="btn btn-dark">Login<span
+                                class="sr-only">(current)</span></a>
+                    </li>
+                </th:block>
+            </ul>
+        </div>
+    </nav>
+    <!-- ------------------------------nav end---------------------------------- -->
+</div>

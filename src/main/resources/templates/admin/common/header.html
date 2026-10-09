@@ -1,0 +1,14 @@
+<head class="header-container" th:fragment="header" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4"> <!-- Bootstrap CSS -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <link rel="stylesheet" th:href="@{/admin/assets/css/bootstrap.min.css}"/>
+    <link rel="stylesheet" type="text/css" th:href="@{/style.css}"/>
+    <link rel="stylesheet" th:href="@{/admin/assets/font-awesome/4.2.0/css/font-awesome.min.css}"/>
+    <script type='text/javascript' th:src="@{/admin/assets/js/ace-extra.min.js}"></script>
+    <link rel="stylesheet" type="text/css" th:href="@{/admin/assets/css/ace.min.css}"/>
+    <link rel="stylesheet" th:href="@{/admin/assets/fonts/fonts.googleapis.com.css}"/>
+    <script th:src="@{/admin/assets/js/ace-extra.min.js}"></script>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css"
+          integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+</head>

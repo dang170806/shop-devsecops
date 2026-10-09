@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <th:block th:replace="~{admin/common/header :: header}"></th:block>
+</head>
+<body class="no-skin" style="font-family: 'Abel', sans-serif;">
+<th:block th:replace="~{admin/common/menu :: menu}"></th:block>
+<div class="main-container" id="main-container">
+    <script type="text/javascript">
+        try {
+            ace.settings.check('main-container', 'fixed')
+        } catch (e) {
+        }
+    </script>
+    <th:block th:replace="~{admin/common/sidebar :: sidebar}"></th:block>
+    <div class="main-content">
+        <div class="main-content-inner">
+            <div class="breadcrumbs" id="breadcrumbs">
+                <script type="text/javascript">
+                    try {
+                        ace.settings.check('breadcrumbs', 'fixed')
+                    } catch (e) {
+                    }
+                </script>
+                <ul class="breadcrumb">
+                    <li>
+                        <i class="ace-icon fa fa-home home-icon"></i>
+                        <a href="#">Trang chủ</a>
+                    </li>
+                    <li class="active">Chỉnh sửa người dùng</li>
+                </ul><!-- /.breadcrumb -->
+            </div>
+            <div class="page-content">
+                <div class="row">
+                    <div class="col-xs-12">
+                        <!-- MESSAGE -->
+                        <div th:if="${messageResponse != null}"
+                             class="alert alert-block"
+                             th:classappend="' alert-' + ${alert}">
+                            <button type="button" class="close" data-dismiss="alert">
+                                <i class="ace-icon fa fa-times"></i>
+                            </button>
+                            <span th:text="${messageResponse}"></span>
+                        </div>
+                        <!-- FORM -->
+                        <form id="formEdit" class="form-horizontal" th:object="${user}">
+
+                            <!-- ROLE -->
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right">Vai trò</label>
+                                <div class="col-sm-5">
+                                    <select class="form-control" name="roleCode">
+                                        <option value="">--- Chọn vai trò ---</option>
+                                        <option th:each="r : ${user.roleDTO}"
+                                                th:value="${r.key}"
+                                                th:text="${r.value}"
+                                                th:selected="${r.key == user.roleCode}">
+                                        </option>
+                                    </select>
+                                    <span class="error-message" id="noRole"
+                                          style="display: none;color: red;">Vui lòng chon Role</span>
+                                </div>
+                            </div>
+
+                            <!-- USERNAME -->
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right">Tên đăng nhập</label>
+                                <div class="col-sm-5">
+                                    <input type="text"
+                                           class="form-control"
+                                           name="userName"
+                                           th:value="${user.userName}"
+                                           th:disabled="${user.id != null}"/>
+                                    <span class="error-message" id="noUserName"
+                                          style="display: none;color: red;">Vui lòng nhập UserName</span>
+                                </div>
+                            </div>
+
+                            <!-- FULLNAME -->
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right">Tên đầy đủ</label>
+                                <div class="col-sm-5">
+                                    <input type="text"
+                                           class="form-control"
+                                           name="fullName"
+                                           th:value="${user.fullName}"/>
+                                    <span class="error-message" id="noFullName"
+                                          style="display: none;color: red;">Vui lòng nhập FillName</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right">Image</label>
+
+                                <div class="col-sm-5 text-center">
+                                    <img id="avatar" alt="avatar"
+                                         th:src="@{|/admin/users/userImage?userName=${user.userName}|}"
+                                         class="img-thumbnail"
+                                         style="max-width: 150px;">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right">Upload Image</label>
+                                <div class="col-sm-5 text-center">
+                                    <input type="file" class="form-control-file" id="exampleFormControlFile1"
+                                           th:field="*{fileData}">
+                                </div>
+                            </div>
+                            <!-- BUTTONS -->
+                            <div class="form-group">
+                                <div class="col-sm-12 text-center">
+                                    <button type="button"
+                                            class="btn btn-white btn-warning btn-bold"
+                                            id="btnAddOrUpdateUsers"
+                                            th:text="${user.id != null ? 'Cập nhật người dùng' : 'Thêm mới người dùng'}">
+                                    </button>
+
+                                    <a class="btn btn-white btn-danger btn-bold"
+                                       id="btnResetPassword"
+                                       th:href="@{|/admin/users/change-password/${user.id}|}"
+                                       th:if="${user.id != null}">
+                                        Reset mật khẩu
+                                    </a>
+                                </div>
+                            </div>
+                            <input type="hidden" id="userId" th:value="${user.id}"/>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block th:replace="~{admin/common/footer :: footer}"></th:block>
+<th:block th:replace="~{admin/common/common-scripts :: jquery}"></th:block>
+
+<script>
+    function resetErrorMessages() {
+        document.getElementById("noUserName").style.display = "none";
+        document.getElementById("noFullName").style.display = "none";
+        document.getElementById("noRole").style.display = "none";
+    }
+
+    function validateData(json) {
+        resetErrorMessages(); // reset all error messages
+        let isValid = true;
+        if (json['userName'] === '') {
+            document.getElementById("noUserName").style.display = "block";
+            isValid = false;
+        }
+        if (json['fullName'] === '') {
+            document.getElementById("noFullName").style.display = "block";
+            isValid = false;
+        }
+        if (json['roleCode'] === '') {
+            document.getElementById("noRole").style.display = "block";
+            isValid = false;
+        }
+        return isValid;
+    }
+
+    const toBase64 = file => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+
+    $("#btnAddOrUpdateUsers").click(async function (event) {
+        event.preventDefault();
+
+        const dataObj = {
+            id: $('#userId').val(),
+            userName: $('input[name="userName"]').val(),
+            fullName: $('input[name="fullName"]').val(),
+            roleCode: $('select[name="roleCode"]').val()
+        };
+
+        if (!validateData(dataObj)) return;
+        if (dataObj.id === "" || dataObj.id === null) {
+            $('#avatar').show();
+            saveUser(dataObj);
+        } else {
+            $('#avatar').show();
+            const fileInput = $('#exampleFormControlFile1')[0].files[0];
+            if (fileInput) {
+                try {
+                    dataObj.base64Image = await toBase64(fileInput);
+                    dataObj.imageName = fileInput.name;
+                } catch (error) {
+                    console.error(error);
+                    alert("Lỗi đọc file ảnh");
+                    return;
+                }
+            }
+            updateUser(dataObj);
+        }
+    });
+
+    function updateUser(data) {
+        $.ajax({
+            url: '/users',
+            type: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            dataType: 'json',
+            success: function (res) {
+                $('#avatar').show();
+                alert(res.message);
+                window.location.reload();
+            },
+            error: function (res) {
+                alert("Lỗi update");
+                console.log(res);
+            }
+        });
+    }
+
+    function saveUser(formData) {
+        $.ajax({
+            url: '/users',
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function (res) {
+                alert(res.message);
+            },
+            error: function (res) {
+                alert("Fail");
+            }
+        });
+    }
+
+    let imageBase64 = '';
+    let imageName = '';
+
+    $('#exampleFormControlFile1').change(function (event) {
+        event.preventDefault();
+        const reader = new FileReader();
+        const file = $(this)[0].files[0];
+        reader.onload = function (e) {
+            imageBase64 = e.target.result;
+            imageName = file.name.replace(/\s+/g, '-').toLowerCase();
+        };
+        reader.readAsDataURL(file);
+        openImage(this, "avatar");
+    });
+
+    function openImage(input, imageView) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                $('#' + imageView).attr('src', reader.result);
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
+</body>
+</html>

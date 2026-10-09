@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Register</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/register/vendor/bootstrap/css/bootstrap.min.css}"/>
+    <link rel="stylesheet" th:href="@{/register/css/small-business.css}"/>
+    <link rel="stylesheet" type="text/css" th:href="@{/register/register.css}"/>
+</head>
+<body>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="register-container">
+            <div class="register-card">
+                <!-- Header -->
+                <div class="register-header">
+                    <h2><img th:src="@{/img/register-user.png}" alt="register icon" class="header-icon">Create Account</h2>
+                    <p>Please enter your information</p>
+                </div>
+
+                <div class="register-body">
+                    <!-- Access Denied -->
+                    <div class="alert alert-danger"
+                         th:if="${param.accessDenied}">
+                        <i class="fas fa-ban me-2"></i>
+                        You are not authorized
+                    </div>
+
+                    <!-- Session Timeout -->
+                    <div class="alert alert-danger"
+                         th:if="${param.sessionTimeout}">
+                        <i class="fas fa-clock me-2"></i>
+                        Session timeout
+                    </div>
+
+                    <!-- Form -->
+                    <form id="registerForm"
+                          th:action="@{/api/user/register}"
+                          method="post">
+
+                        <!-- Full Name -->
+                        <div class="form-group">
+                            <label class="form-label" for="fullName">
+                                <i class="fas fa-user me-1"></i>Full Name
+                            </label>
+                            <input type="text" id="fullName" name="fullName"
+                                   class="form-control"
+                                   placeholder="Enter your full name"
+                                   required>
+                        </div>
+
+                        <!-- Username -->
+                        <div class="form-group">
+                            <label class="form-label" for="username">
+                                <i class="fas fa-at me-1"></i>Username
+                            </label>
+                            <input type="text" id="username" name="username"
+                                   class="form-control"
+                                   placeholder="Choose a username"
+                                   required>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="form-group">
+                            <label class="form-label" for="password">
+                                <i class="fas fa-lock me-1"></i>Password
+                            </label>
+                            <div class="password-field">
+                                <input type="password" id="password"
+                                       name="password" class="form-control"
+                                       placeholder="Create a strong password"
+                                       required>
+                                <button type="button" class="password-toggle"
+                                        onclick="togglePassword('password')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Confirm Password -->
+                        <div class="form-group">
+                            <label class="form-label" for="confirmPassword">
+                                <i class="fas fa-lock me-1"></i>Confirm Password
+                            </label>
+                            <div class="password-field">
+                                <input type="password" id="confirmPassword"
+                                       name="confirmPassword"
+                                       class="form-control"
+                                       placeholder="Re-enter your password"
+                                       required>
+                                <button type="button" class="password-toggle"
+                                        onclick="togglePassword('confirmPassword')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Terms -->
+                        <div class="terms-section">
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       id="isAgreeTerms"
+                                       name="isAgreeTerms">
+                                <label class="form-check-label" for="isAgreeTerms">
+                                    I agree to all statements in
+                                    <a href="#" class="terms-link">Terms of Service</a>
+                                    and
+                                    <a href="#" class="terms-link">Privacy Policy</a>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Submit -->
+                        <button class="register-btn" type="submit">
+                            <i class="fas fa-user-plus me-2"></i>Register
+                        </button>
+                    </form>
+
+                    <!-- Social Login -->
+                    <div class="social-login">
+                        <div class="social-title">Or register with</div>
+                        <div class="social-buttons">
+                            <a href="#" class="social-btn" title="Register with Facebook">
+                                <i class="fab fa-facebook-f"></i>
+                            </a>
+                            <a th:href="@{/oauth2/authorization/google}" class="social-btn" title="Register with Google">
+                                <i class="fab fa-google"></i>
+                            </a>
+                            <a th:href="@{/oauth2/authorization/github}" class="social-btn" title="Register with GitHub">
+                                <i class="fab fa-github"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Login Link -->
+                    <div class="login-link">
+                        Already have an account?
+                        <a th:href="@{/admin/login}">Login here</a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<th:block th:replace="~{admin/common/common-scripts :: jquery}"></th:block>
+<!--JavaScript for password toggle-->
+<script>
+    function togglePassword(fieldId) {
+        const field = document.getElementById(fieldId);
+        const toggle = field.nextElementSibling;
+        const icon = toggle.querySelector('i');
+
+        if (field.type === 'password') {
+            field.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            field.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+
+    // Form validation
+    document.getElementById('registerForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const isAgreeTerms = document.getElementById('isAgreeTerms').checked;
+
+        if (!isAgreeTerms) {
+            alert('Bạn phải đồng ý với điều khoản cộng đồng!');
+            return false;
+        }
+
+        const fullName = document.getElementById('fullName').value.trim();
+        if (fullName.length < 2) {
+            alert('Tên phải có ít nhất 2 ký tự!');
+            return false;
+        }
+
+        const username = document.getElementById('username').value.trim();
+        if (username.length < 3) {
+            alert('Tên đăng nhập phải có ít nhất 3 ký tự!');
+            return false;
+        }
+
+        if (password !== confirmPassword) {
+            alert('Mật khẩu không khớp!');
+            return false;
+        }
+
+        if (password.length < 6) {
+            alert('Mật khẩu phải chứa ít nhất 6 ký tự!');
+            return false;
+        }
+
+        const formData = {
+            fullName: fullName,
+            username: username,
+            password: password,
+            confirmPassword: confirmPassword
+        };
+
+        // Add loading effect to register button
+        const registerBtn = document.querySelector('.register-btn');
+        registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+        registerBtn.disabled = true;
+
+        // Send AJAX request
+        fetch('/api/user/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                [document.querySelector('meta[name="_csrf_header"]').content]:
+                    document.querySelector('meta[name="_csrf"]').content,
+            },
+            body: JSON.stringify(formData)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(text || 'Đăng ký thất bại');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert('Đăng ký thành công. Vui lòng đăng nhập.');
+                window.location.href = '/admin/login';
+            })
+            .catch(error => {
+                var message = "Đăng ký thất bại!";
+                try {
+                    // Nếu message là JSON, lấy ra phần message
+                    const errorJson = JSON.parse(error.message);
+                    if (errorJson.message) {
+                        message = errorJson.message;
+                    }
+                } catch (e) {
+                    // Nếu không phải JSON thì hiện mặc định
+                    message = error.message || message;
+                }
+                alert(message);
+                // Reset button
+                registerBtn.innerHTML = '<i class="fas fa-user-plus me-2"></i>Register';
+                registerBtn.disabled = false;
+            });
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+<head>
+    <meta charset="UTF-8">
+    <title>Building Edit</title>
+    <th:block th:replace="~{admin/common/header :: header}"></th:block>
+</head>
+<body>
+<body class="no-skin" style="font-family: 'Abel', sans-serif;">
+<th:block th:replace="~{admin/common/menu :: menu}"></th:block>
+<div class="main-container" id="main-container">
+  <script type="text/javascript">
+    try {
+      ace.settings.check('main-container', 'fixed')
+    } catch (e) {
+    }
+  </script>
+  <th:block th:replace="~{admin/common/sidebar :: sidebar}"></th:block>
+  <div class="main-content">
+    <div class="main-content-inner">
+      <div class="breadcrumbs" id="breadcrumbs">
+        <script type="text/javascript">
+          try{ace.settings.check('breadcrumbs' , 'fixed')}catch(e){}
+        </script>
+
+        <ul class="breadcrumb">
+          <li>
+            <i class="ace-icon fa fa-home home-icon"></i>
+            <a href="#">Home</a>
+          </li>
+          <li class="active">Dashboard</li>
+        </ul><!-- /.breadcrumb -->
+
+      </div>
+
+      <div class="page-content">
+        <div class="page-header">
+          <h1>
+            Danh sách tòa nhà
+            <small>
+              <i class="ace-icon fa fa-angle-double-right"></i>
+              overview &amp; stats
+            </small>
+          </h1>
+        </div><!-- /.page-header -->
+        <div class="row">
+          <div class="col-xs-12">
+            <form class="form-horizontal" role="form" method="GET" action="http://localhost:8081/api/buildings"
+                  id="building-edit-form">
+              <div class="widget-box">
+                <div class="widget-header">
+                  <h4 class="widget-title">Thông tin tòa nhà</h4>
+                  <span class="widget-toolbar">
+												<a href="#" data-action="settings">
+													<i class="ace-icon fa fa-cog"></i>
+												</a>
+												<a href="#" data-action="reload">
+													<i class="ace-icon fa fa-refresh"></i>
+												</a>
+												<a href="#" data-action="collapse">
+													<i class="ace-icon fa fa-chevron-up"></i>
+												</a>
+												<a href="#" data-action="close">
+													<i class="ace-icon fa fa-times"></i>
+												</a>
+											</span>
+                </div>
+
+                <div class="widget-body">
+                  <div class="widget-main">
+                    <div class="row">
+                      <div class="col-xs-12">
+                        <form class="form-horizontal" role="form" id="building-edit-form1" th:object="${building}">
+                          <input type="hidden" id="buildingId" name="id" th:value="${building.id}">
+                          <div class="form-group">
+                            <div class="col-xs-12">
+                              <label for="name"
+                                     class="col-xs-3 control-label no-padding-right">Tên tòa
+                                nhà</label>
+                              <div class="col-xs-6">
+                                <input type="text" id="name" name="name" class="form-control"
+                                       placeholder="Tên tòa nhà" th:value="${building.name}">
+                                <span class="error-message" id="noName" style = "display: none; color: red;">
+																			Vui lòng nhập tên tòa nhà
+																		</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="form-group">
+                            <div class="col-xs-12">
+                              <label for="district"
+                                     class="col-xs-3 control-label no-padding-right">Quận</label>
+                              <div class="col-xs-6">
+                                <select class="form-control" name="district" id="district">
+                                  <option value="">Chọn quận</option>
+                                  <option th:each="d:${districts}" th:value="${d.key}" th:text="${d.value}"
+                                  th:selected="${d.key == building.district}"></option>
+                                </select>
+                                <span class="error-message" id="noDistrictId" style = "display: none; color: red;">
+																			Vui lòng nhập tên quận
+																		</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="form-group">
+                            <div class="col-xs-12">
+                              <label for="ward"
+                                     class="col-xs-3 control-label no-padding-right">Phường</label>
+                              <div class="col-xs-6">
+                                <input type="text" id="ward" name="ward" class="form-control"
+                                       placeholder="Nhập phường" th:value="${building.ward}">
+                                <span class="error-message" id="noWard" style = "display: none; color: red;">
+																			Vui lòng nhập tên phường
+																		</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="form-group">
+                            <div class="col-xs-12">
+                              <label for="street"
+                                     class="col-xs-3 control-label no-padding-right">Đường</label>
+                              <div class="col-xs-6">
+                                <input type="text" id="street" name="street"
+                                       class="form-control" placeholder="Nhập đường" th:value="${building.street}">
+                                <span class="error-message" id="noStreet" style = "display: none; color: red;">
+																			Vui lòng nhập tên đường
+																		</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="form-group">
+                            <div class="col-xs-12">
+                              <label for="structure"
+                                     class="col-xs-3 control-label no-padding-right">Kết cấu</label>
+                              <div class="col-xs-6">
+                                <input type="text" id="structure" name="structure"
+                                       class="form-control" th:value="${building.structure}">
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="form-group">
+                            <div class="col-xs-12">
+                              <label for="numberOfBasement"
+                                     class="col-xs-3 control-label no-padding-right">Số tầng
+                                hầm</label>
+                              <div class="col-xs-6">
+                                <input type="number" id="numberOfBasement"
+                                       name="numberOfBasement" class="form-control" th:value="${building.numberOfBasement}">
+                                <span class="error-message" id="noNumberOfBasement" style = "display: none; color: red;">
+																			Vui lòng nhập số tầng hầm
+																		</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="form-group">
+                            <div class="col-xs-12">
+                              <label for="floorArea"
+                                     class="col-xs-3 control-label no-padding-right">Diện tích
+                                sàn</label>
+                              <div class="col-xs-6">
+                                <input type="text" id="floorArea" name="floorArea"
+                                       class="form-control" th:value="${building.floorArea}">
+                                <span class="error-message" id="noFloorArea" style = "display: none; color: red;">
+																			Vui lòng nhập diện tích sàn
+																		</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="form-group">
+                            <div class="col-xs-12">
+                              <label for="direction"
+                                     class="col-xs-3 control-label no-padding-right">Hướng</label>
+                              <div class="col-xs-6">
+                                <input type="text" id="direction" name="direction"
+                                       class="form-control" th:value="${building.direction}">
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="form-group">
+                            <div class="col-xs-12">
+                              <label for="level"
+                                     class="col-xs-3 control-label no-padding-right">Hạng</label>
+                              <div class="col-xs-6">
+                                <input type="text" id="level" name="level"
+                                       class="form-control" th:value="${building.level}">
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="form-group">
+                            <div class="col-xs-12">
+                              <label for="rentArea"
+                                     class="col-xs-3 control-label no-padding-right">Diện tích
+                                thuê</label>
+                              <div class="col-xs-6">
+                                <input type="text" id="rentArea" name="rentArea"
+                                       class="form-control" placeholder="100,200,300" th:value="${building.rentArea}">
+                                <span class="error-message" id="noRentArea" style = "display: none; color: red;">
+																			Vui lòng nhập diện tích thuê
+																		</span>
+                                <span class="dz-error-message" id="errorRegrex" style = "display: none; color: red;">
+                                  Vui lòng nhập đúng định dạng, ví dụ 100,200,300
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="form-group">
+                            <div class="col-xs-12">
+                              <label for="rentPrice" class="col-xs-3 control-label no-padding-right">Giá
+                                thuê</label>
+                              <div class="col-xs-6">
+                                <input type="text" id="rentPrice" name="rentPrice" class="form-control" th:value="${building.rentPrice}">
+                                <span class="error-message" id="noRentPrice" style = "display: none; color: red;">
+																			Vui lòng nhập giá thuê
+																		</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="form-group">
+                            <div class="col-xs-12">
+                              <label for="rentPriceDescription"
+                                     class="col-xs-3 control-label no-padding-right">Mô tả
+                                giá</label>
+                              <div class="col-xs-6">
+                                <input type="text" id="rentPriceDescription"
+                                       name="rentPriceDescription" class="form-control" th:value="${building.rentPriceDescription}">
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="form-group">
+                            <div class="col-xs-12">
+                              <label for="serviceFee"
+                                     class="col-xs-3 control-label no-padding-right">Phí dịch
+                                vụ</label>
+                              <div class="col-xs-6">
+                                <input type="text" id="serviceFee" name="serviceFee"
+                                       class="form-control" th:value="${building.serviceFee}">
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="form-group">
+                            <div class="col-xs-12">
+                              <label for="carFee"
+                                     class="col-xs-3 control-label no-padding-right">Phí ô
+                                tô</label>
+                              <div class="col-xs-6">
+                                <input type="text" id="carFee" name="carFee"
+                                       class="form-control" th:value="${building.carFee}">
+                              </div>
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <div class="col-xs-12">
+                              <label for="carFee"
+                                     class="col-xs-3 control-label no-padding-right">Phí ngoài
+                                giờ</label>
+                              <div class="col-xs-6">
+                                <input type="text" id="outTimeFee" name="outTimeFee"
+                                       class="form-control" th:value="${building.outTimeFee}">
+                              </div>
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <div class="col-xs-12">
+                              <label for="carFee"
+                                     class="col-xs-3 control-label no-padding-right">Tên quản
+                                lí</label>
+                              <div class="col-xs-6">
+                                <input type="text" id="managerName" name="managerName"
+                                       class="form-control" th:value="${building.managerName}">
+                                <span class="error-message" id="noManagerName" style = "display: none; color: red;">
+																			Vui lòng nhập tên quản lý
+																		</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <div class="col-xs-12">
+                              <label for="carFee"
+                                     class="col-xs-3 control-label no-padding-right">SĐT quản
+                                lí</label>
+                              <div class="col-xs-6">
+                                <input type="text" id="managerPhone"
+                                       name="managerPhone" class="form-control" th:value="${building.managerPhone}">
+                                <span class="error-message" id="noManagerPhone" style = "display: none; color: red;">
+																			Vui lòng nhập SĐT quản lý
+																		</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <div class="col-xs-12">
+                              <label class="col-xs-3 control-label no-padding-right">Loại tòa
+                                nhà</label>
+                              <div class="col-xs-9">
+                                <label class="checkbox-inline" th:each="type:${rentTypes}">
+                                  <input type="checkbox" name="type" th:value="${type.key}" th:text="${type.value}"
+                                         th:checked="${(building.type != null) and building.type.contains(type.key)}">
+                                </label>
+                                <span class="error-message" id="noType" style = "display: none; color: red;">
+																			Vui lòng nhập loại tòa nhà
+																		</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <div class="col-xs-12">
+                              <label for="carFee"
+                                     class="col-xs-3 control-label no-padding-right">Phí môi
+                                giới</label>
+                              <div class="col-xs-6">
+                                <input type="text" id="brokerageFee" name="brokerageFee"
+                                       class="form-control" th:value="${building.brokerageFee}">
+                              </div>
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <div class="col-xs-12">
+                              <label for="carFee"
+                                     class="col-xs-3 control-label no-padding-right">Ghi chú</label>
+                              <div class="col-xs-6">
+                                <input type="text" id="note" name="note" class="form-control" th:value="${building.note}">
+                              </div>
+                            </div>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group center">
+                <button class="btn btn-success" id="btnAddOrUpdateBuilding">
+                  <i class="ace-icon fa fa-check bigger-110"></i>
+                  <span th:text="${building.id!=null} ? 'Cập nhật tòa nhà' : 'Thêm mới'"></span>
+                </button>
+                <a href="/admin/buildings/list" class="btn btn-danger" id="btnDeleteBuilding">Thoát</a>
+                </a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div><!-- /.page-content -->
+    </div>
+  </div><!-- /.main-content -->
+  <th:block th:replace="~{admin/common/common-scripts :: jquery}"></th:block>
+  <script>
+    function hideErrorMessages(){
+      const errorMessages = document.querySelectorAll('.error-message');
+      errorMessages.forEach(function(message){
+        message.style.display = 'none';
+      });
+    }
+    function validateData(data){
+      hideErrorMessages();
+      let isValid = true;
+      if(!data['name'] || data['name'].trim() === ''){
+        document.getElementById('noName').style.display = 'block';
+        isValid = false;
+      }
+      if(!data['district'] || data['district'].trim() === ''){
+        document.getElementById('noDistrictId').style.display = 'block';
+        isValid = false;
+      }
+      if(!data['ward'] || data['ward'].trim() === ''){
+        document.getElementById('noWard').style.display = 'block';
+        isValid = false;
+      }
+      if(!data['street'] || data['street'].trim() === ''){
+        document.getElementById('noStreet').style.display = 'block';
+        isValid = false;
+      }
+      if(!data['numberOfBasement'] || data['numberOfBasement'].trim() === ''){
+        document.getElementById('noNumberOfBasement').style.display = 'block';
+        isValid = false;
+      }
+      const rentAreaRegex = /^\d+(\s*,\s*\d+)*$/;
+      if(!data['rentArea'] || data['rentArea'].trim() === ''){
+        document.getElementById('noRentArea').style.display = 'block';
+        isValid = false;
+      }
+      if(!rentAreaRegex.test(data['rentArea'].trim())){
+        document.getElementById('errorRegrex').style.display = 'block';
+        isValid = false;
+      }
+      if(!data['rentPrice'] || data['rentPrice'].trim() === ''){
+        document.getElementById('noRentPrice').style.display = 'block';
+        isValid = false;
+      }
+      if(!data['floorArea'] || data['floorArea'].trim() === ''){
+        document.getElementById('noFloorArea').style.display = 'block';
+        isValid = false;
+      }
+      if(!data['managerName'] || data['managerName'].trim() === ''){
+        document.getElementById('noManagerName').style.display = 'block';
+        isValid = false;
+      }
+      const phoneRegex = /^0\d{9}$/;
+      if(!data['managerPhone'] || data['managerPhone'].trim() === '' || !phoneRegex.test(data['managerPhone'].trim())){
+        document.getElementById('noManagerPhone').style.display = 'block';
+        isValid = false;
+      }
+      if(!data['type'] || data['type'].length === 0){
+        document.getElementById('noType').style.display = 'block';
+        isValid = false;
+      }
+      return isValid;
+    }
+    $('#btnAddOrUpdateBuilding').click(function(e){
+      e.preventDefault();
+      const data = {};
+      const type = [];
+      const formData = $('#building-edit-form').serializeArray();
+      $.each(formData,function(i,field){
+        if(field.name === "type"){
+          type.push(field.value);
+        }
+        else{
+          data[field.name] = field.value;
+        }
+      });
+      data['type'] = type;
+      console.log(JSON.stringify(data));
+      if(!validateData(data)){
+        alert('Vui lòng nhập đủ dữ liệu');
+        return;
+      }
+      let method = 'POST';
+      let url = '/api/buildings';
+      if (data['id'] !== null && data['id'] !== undefined && data['id'] !== '') {
+        method = 'PUT';
+        url = '/api/buildings/' + data['id'] + '/update';
+      }
+      $.ajax({
+        type: method,
+        url: url,
+        contentType: 'application/json',
+        timeout: 10000,
+        data: JSON.stringify(data),
+        dataType: 'json',
+        success: function(response){
+          alert(response.message);
+          window.location.href = '/admin/buildings/list';
+        },
+        error: function(response){
+          alert(response.responseJSON.details.join('\n'));
+          console.log(response.responseJSON);
+        }
+      });
+    });
+  </script>
+</div>

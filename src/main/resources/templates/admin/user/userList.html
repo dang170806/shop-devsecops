@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+<head>
+    <meta charset="UTF-8">
+    <title>Devon-Building</title>
+    <th:block th:replace="~{admin/common/header :: header}"></th:block>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="no-skin" style="font-family: 'Abel', sans-serif;">
+<th:block th:replace="~{admin/common/menu :: menu}"></th:block>
+<div class="main-container" id="main-container">
+    <script type="text/javascript">
+        try {
+            ace.settings.check('main-container', 'fixed')
+        } catch (e) {
+        }
+    </script>
+    <th:block th:replace="~{admin/common/sidebar :: sidebar}"></th:block>
+    <div class="main-content">
+        <div class="main-content-inner">
+            <!-- Breadcrumb -->
+            <div class="breadcrumbs" id="breadcrumbs">
+                <ul class="breadcrumb">
+                    <li>
+                        <i class="ace-icon fa fa-home home-icon"></i>
+                        <a th:href="@{/admin/home}">Trang chủ</a>
+                    </li>
+                    <li class="active">Danh sách người dùng</li>
+                </ul>
+            </div>
+
+            <div class="page-content container-fluid">
+                <div class="page-header">
+                    <h1>
+                        List Of Accounts
+                        <small>
+                            <i class="ace-icon fa fa-angle-double-right"></i>
+                            overview &amp; stats
+                        </small>
+                    </h1>
+                </div><!-- /.page-header -->
+                <div th:if="${messageResponse != null}"
+                     th:class="'alert alert-block alert-' + ${alert}">
+                    <button type="button" class="close" data-dismiss="alert">
+                        <i class="ace-icon fa fa-times"></i>
+                    </button>
+                    <span th:text="${messageResponse}"></span>
+                </div>
+
+                <!-- Form Search -->
+                <div class="row">
+                    <div class="col-xs-12">
+                        <div class="widget-box">
+                            <div class="widget-header">
+                                <h4 class="widget-title">Tìm kiếm</h4>
+
+                                <div class="widget-toolbar">
+                                    <a href="#" data-action="collapse">
+                                        <i class="ace-icon fa fa-chevron-up"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <form th:action="@{/admin/users/list}" th:object="${model}" id="listForm" method="get">
+                                <div class="widget-body">
+                                    <div class="widget-main">
+                                        <div class="form-horizontal">
+
+                                            <div class="form-group">
+                                                <label class="col-sm-2 control-label">Giá trị cần tìm</label>
+                                                <div class="col-sm-8">
+                                                    <input type="text" class="form-control input-sm" name="key"/>
+                                                </div>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label class="col-sm-2 control-label"></label>
+                                                <div class="col-sm-8">
+                                                    <button id="btnSearch" type="submit"
+                                                            class="btn btn-sm btn-success">
+                                                        Tìm kiếm
+                                                        <i class="ace-icon fa fa-arrow-right icon-on-right bigger-110"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="pull-right">
+                            <div class="table-btn-controls">
+                                <div class="pull-right tableTools-container">
+                                    <div class="btn-group">
+                                        <a class="btn btn-white btn-primary btn-bold"
+                                           th:href="@{/admin/users}"
+                                           title="Thêm người dùng">
+                                            <i class="fas fa-plus-circle fa-lg orange"></i>
+                                        </a>
+                                        <button id="btnDelete" class="btn btn-white btn-primary btn-bold"
+                                                onclick="warningBeforeDelete()"
+                                                title="Xóa người dùng">
+                                            <i class="fas fa-trash fa-lg red"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="hr hr-18 dotted hr-double"></div>
+                <!-- List Users -->
+                <div class="row">
+                    <div class="col-xs-12">
+                        <div class="table-responsive mt-3">
+                            <table class="table table-bordered table-hover">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center">
+                                            <input type="checkbox" id="checkAll">
+                                        </th>
+                                        <th>User Name</th>
+                                        <th>Full Name</th>
+                                        <th>Phone</th>
+                                        <th class="text-center">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="u : ${model.list}">
+                                        <td class="text-center">
+                                            <input type="checkbox" name="checkList"
+                                                   th:value="${u.id}"
+                                                   class="check-box-element"/>
+                                        </td>
+                                        <td th:text="${u.userName}"></td>
+                                        <td th:text="${u.fullName}"></td>
+                                        <td th:text="${u.phone}"></td>
+                                        <td class="text-center">
+                                            <sec:authorize access="hasRole('MANAGER')">
+                                                <a class="btn btn-sm btn-primary"
+                                                   th:href="@{|/admin/users/${u.userName}|}"
+                                                   title="Cập nhật người dùng">
+                                                    <i class="fa fa-pencil-square-o"></i>
+                                                </a>
+                                            </sec:authorize>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="page-navigator" th:if="${model.totalPages > 1}">
+                                <th:block th:each="page: ${model.navigationPages}">
+                                    <a th:if="${page != -1}" class="nav-item"
+                                       th:href="@{|/admin/users/list?page=${page}|}" th:utext="${page}"></a>
+
+                                    <span th:if="${page == -1}" class="nav-item"> ... </span>
+                                </th:block>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<th:block th:replace="~{admin/common/footer :: footer}"></th:block>
+<th:block th:replace="~{admin/common/common-scripts :: jquery}"></th:block>
+
+<script type="text/javascript">
+    $('#checkAll').on('change', function () {
+        const isChecked = $(this).prop('checked');
+        $('.check-box-element').prop('checked', isChecked);
+    });
+
+    $('.check-box-element').on('change', function () {
+        const total = $('.check-box-element').length;
+        const checked = $('.check-box-element:checked').length;
+
+        $('#checkAll').prop('checked', total === checked);
+    });
+
+    $(document).ready(function () {
+        $('#btnSearch').click(function () {
+            $('#listForm').submit();
+        });
+    });
+
+    function warningBeforeDelete() {
+        showAlertBeforeDelete(function (e) {
+            const dataArray = $('tbody input[type=checkbox]:checked').map(function () {
+                return $(this).val();
+            }).get();
+            if (dataArray.length === 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Vui lòng chọn ít nhất một người dùng'
+                });
+                return;
+            }
+            deleteUser(dataArray);
+        });
+    }
+
+    function deleteUser(data) {
+        $.ajax({
+            url: '/users',
+            type: 'DELETE',
+            dataType: 'json',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function (res) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Đã xóa thành công'
+                }).then(() => {
+                    window.location.href = "/admin/users/list";
+                });
+            },
+            error: function (res) {
+                console.log(res);
+            }
+        });
+    }
+
+    function showAlertBeforeDelete(callback) {
+        Swal.fire({
+            title: "Bạn chắc chắn muốn xóa?",
+            text: "Không thể hoàn tác hành động này!",
+            icon: "warning",
+            showCancelButton: true,
+            buttonsStyling: false,
+            customClass: {
+                confirmButton: 'btn btn-danger',
+                cancelButton: 'btn btn-primary'
+            },
+            confirmButtonText: "Xóa",
+            cancelButtonText: "Hủy"
+        }).then(function (res) {
+            if (res.value) {
+                callback();
+            } else if (res.dismiss === 'cancel') {
+                console.log('cancel');
+            }
+        });
+    }
+</script>
+</body>
+</html>

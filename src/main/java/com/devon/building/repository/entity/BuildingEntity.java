@@ -72,6 +72,6 @@ public class BuildingEntity {
     private byte[] image;
 
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "createddate", nullable = false)
+    @Column(name = "createddate")
     private Date createDate;
 }

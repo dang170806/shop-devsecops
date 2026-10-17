@@ -23,9 +23,9 @@ public class UserEntity implements Serializable {
     @Serial
     private static final long serialVersionUID = -2054386655979281969L;
 
-    public static final String ROLE_MANAGER = "MANAGER";
-    public static final String ROLE_EMPLOYEE = "STAFF";
-    public static final String ROLE_USER = "USER";
+    public static final String ROLE_MANAGER = "ROLE_MANAGER";
+    public static final String ROLE_EMPLOYEE = "ROLE_STAFF";
+    public static final String ROLE_USER = "ROLE_USER";
 
 
     @Column(name = "username", length = 20, nullable = false)

@@ -34,18 +34,16 @@ public class UserController {
     private final MessageUtils messageUtils;
 
     @GetMapping("/list")
-    public ModelAndView userList(@RequestParam(value = "page", defaultValue = "1") String pageStr, @RequestParam(value = "key", required = false) String key, HttpServletRequest request) {
+    public ModelAndView userList(@RequestParam(value = "page", defaultValue = "1") int page,
+                                 @RequestParam(value = "key", required = false) String key,
+                                 HttpServletRequest request) {
         ModelAndView modelAndView = new ModelAndView("admin/user/userList");
-        int page = 1;
-        try {
-            page = Integer.parseInt(pageStr);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        key = key == null || key.isBlank() ? null : key.trim();
         final int MAX_RESULT = 5;
         final int MAX_NAVIGATION_PAGE = 10;
         PaginationResult<UserEntity> paginationResult = userService.listUserInfo(key, page, MAX_RESULT, MAX_NAVIGATION_PAGE);
         modelAndView.addObject("model", paginationResult);
+        modelAndView.addObject("key", key);
         initMessageResponse(modelAndView, request);
         return modelAndView;
     }

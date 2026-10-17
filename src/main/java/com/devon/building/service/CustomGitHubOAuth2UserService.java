@@ -1,4 +1,4 @@
-package com.devon.building.service.impl;
+package com.devon.building.service;
 
 import com.devon.building.constant.SystemConstant;
 import com.devon.building.repository.UserRepository;

@@ -16,21 +16,17 @@ public class PaginationResult<E> {
     private List<Integer> navigationPages;
 
     public PaginationResult(TypedQuery<E> query, TypedQuery<Long> countQuery, int page, int maxResult, int maxNavigationPage) {
-
+        if (maxResult < 1) {
+            throw new IllegalArgumentException("maxResult must be greater than zero");
+        }
         this.maxResult = maxResult;
-        this.currentPage = Math.max(page, 1);
+        this.maxNavigationPage = Math.max(maxNavigationPage, 1);
 
-        // 1. Đếm số bản ghi
+        // Count first so an out-of-range request can be clamped before fetching rows.
         this.totalRecords = countQuery.getSingleResult().intValue();
-
-        // 2. Tính tổng số trang
         this.totalPages = (int) Math.ceil((double) totalRecords / maxResult);
-
-        // 3. Lấy dữ liệu phân trang
+        this.currentPage = totalPages == 0 ? 1 : Math.min(Math.max(page, 1), totalPages);
         this.list = query.setFirstResult((currentPage - 1) * maxResult).setMaxResults(maxResult).getResultList();
-
-        // 4. Tính navigation
-        this.maxNavigationPage = Math.min(maxNavigationPage, totalPages);
         calcNavigationPages();
     }
 
@@ -40,18 +36,37 @@ public class PaginationResult<E> {
 
     public static List<Integer> buildNavigationPages(int currentPage, int totalPages, int maxNavigationPage) {
         List<Integer> pages = new ArrayList<>();
-        int current = Math.min(currentPage, totalPages);
-        int begin = current - maxNavigationPage / 2;
-        int end = current + maxNavigationPage / 2;
-        pages.add(1);
-        if (begin > 2) pages.add(-1);
-        for (int page = begin; page <= end; page++) {
-            if (page > 1 && page < totalPages) {
-                pages.add(page);
-            }
+        if (totalPages <= 0) {
+            return pages;
         }
-        if (end < totalPages - 2) pages.add(-1);
-        if (totalPages > 1) pages.add(totalPages);
+
+        int windowSize = Math.max(maxNavigationPage, 1);
+        if (totalPages <= windowSize) {
+            for (int page = 1; page <= totalPages; page++) pages.add(page);
+            return pages;
+        }
+
+        int current = Math.min(Math.max(currentPage, 1), totalPages);
+        int start = Math.max(1, current - windowSize / 2);
+        int end = start + windowSize - 1;
+        if (end > totalPages) {
+            end = totalPages;
+            start = end - windowSize + 1;
+        }
+
+        if (start > 2) {
+            pages.add(1);
+            pages.add(-1);
+        } else {
+            start = 1;
+        }
+        for (int page = start; page <= end; page++) pages.add(page);
+        if (end < totalPages - 1) {
+            pages.add(-1);
+            pages.add(totalPages);
+        } else {
+            for (int page = end + 1; page <= totalPages; page++) pages.add(page);
+        }
         return pages;
     }
 

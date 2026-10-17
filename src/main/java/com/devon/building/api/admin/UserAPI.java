@@ -4,6 +4,8 @@ import com.devon.building.model.dto.PasswordDTO;
 import com.devon.building.model.dto.ResponseDTO;
 import com.devon.building.model.dto.UserDTO;
 import com.devon.building.service.UserService;
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -35,9 +37,15 @@ public class UserAPI {
             userService.save(user);
             responseDTO.setMessage("Create Successfully");
             return ResponseEntity.ok().body(responseDTO);
-        } catch (Exception e) {
+        } catch (EntityExistsException e) {
+            responseDTO.setMessage(e.getMessage());
+            return ResponseEntity.status(409).body(responseDTO);
+        } catch (IllegalArgumentException e) {
             responseDTO.setMessage(e.getMessage());
             return ResponseEntity.badRequest().body(responseDTO);
+        } catch (Exception e) {
+            responseDTO.setMessage("Unable to create user");
+            return ResponseEntity.internalServerError().body(responseDTO);
         }
     }
 
@@ -55,23 +63,44 @@ public class UserAPI {
             userService.update(userDTO);
             responseDTO.setMessage("Update Successfully");
             return ResponseEntity.ok().body(responseDTO);
-        } catch (Exception e) {
+        } catch (EntityNotFoundException e) {
+            responseDTO.setMessage(e.getMessage());
+            return ResponseEntity.status(404).body(responseDTO);
+        } catch (IllegalArgumentException e) {
             responseDTO.setMessage(e.getMessage());
             return ResponseEntity.badRequest().body(responseDTO);
+        } catch (Exception e) {
+            responseDTO.setMessage("Unable to update user");
+            return ResponseEntity.internalServerError().body(responseDTO);
         }
     }
 
     @DeleteMapping
     public ResponseEntity<?> deleteUsers(@RequestBody List<Long> idList) {
-        if (!idList.isEmpty()) {
-            userService.delete(idList);
+        if (idList == null || idList.isEmpty() || idList.stream().anyMatch(java.util.Objects::isNull)) {
+            ResponseDTO response = new ResponseDTO();
+            response.setMessage("At least one user id is required");
+            return ResponseEntity.badRequest().body(response);
         }
-        return ResponseEntity.ok().body("{ \"message\": \"Delete Successfully\" }");
+        userService.delete(idList);
+        ResponseDTO response = new ResponseDTO();
+        response.setMessage("Delete Successfully");
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/password/{id}")
     public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody PasswordDTO passwordDTO) {
         ResponseDTO responseDTO = new ResponseDTO();
-        return ResponseEntity.ok().body(responseDTO);
+        try {
+            userService.changePassword(id, passwordDTO);
+            responseDTO.setMessage("Password updated successfully");
+            return ResponseEntity.ok(responseDTO);
+        } catch (EntityNotFoundException e) {
+            responseDTO.setMessage(e.getMessage());
+            return ResponseEntity.status(404).body(responseDTO);
+        } catch (IllegalArgumentException e) {
+            responseDTO.setMessage(e.getMessage());
+            return ResponseEntity.badRequest().body(responseDTO);
+        }
     }
 }

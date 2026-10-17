@@ -1,4 +1,4 @@
-package com.devon.building.service.impl;
+package com.devon.building.service;
 
 import com.devon.building.repository.TransactionRepository;
 import com.devon.building.repository.CustomerRepository;

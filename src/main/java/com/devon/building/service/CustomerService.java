@@ -15,7 +15,7 @@ public interface CustomerService {
     ResponseDTO loadStaff(Long id);
     ResponseDTO updateStaff(AssignCustomerDTO assignCustomerDTO);
 
-    ResponseDTO deleteBuilding(List<Long> ids);
+    ResponseDTO deleteCustomer(List<Long> ids);
 
     CustomerEntity findById(Long id);
 

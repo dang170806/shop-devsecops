@@ -69,7 +69,8 @@
                                             <div class="form-group">
                                                 <label class="col-sm-2 control-label">Giá trị cần tìm</label>
                                                 <div class="col-sm-8">
-                                                    <input type="text" class="form-control input-sm" name="key"/>
+                                                    <input type="text" class="form-control input-sm" name="key"
+                                                           th:value="${key}"/>
                                                 </div>
                                             </div>
 
@@ -150,7 +151,7 @@
                             <div class="page-navigator" th:if="${model.totalPages > 1}">
                                 <th:block th:each="page: ${model.navigationPages}">
                                     <a th:if="${page != -1}" class="nav-item"
-                                       th:href="@{|/admin/users/list?page=${page}|}" th:utext="${page}"></a>
+                                       th:href="@{/admin/users/list(page=${page}, key=${key})}" th:utext="${page}"></a>
 
                                     <span th:if="${page == -1}" class="nav-item"> ... </span>
                                 </th:block>
@@ -212,7 +213,7 @@
                     icon: 'success',
                     title: 'Đã xóa thành công'
                 }).then(() => {
-                    window.location.href = "/admin/users/list";
+                    window.location.reload();
                 });
             },
             error: function (res) {

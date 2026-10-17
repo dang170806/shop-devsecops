@@ -40,17 +40,17 @@ public class CustomerAPI {
         return ResponseEntity.ok().body(customerService.updateStaff(assignCustomerDTO));
     }
     @DeleteMapping("/{ids}")
-    public ResponseEntity<ResponseDTO> deleteBuilding(@PathVariable List<Long> ids, Authentication authentication){
+    public ResponseEntity<ResponseDTO> deleteCustomer(@PathVariable List<Long> ids, Authentication authentication){
         ResponseDTO responseDTO = new ResponseDTO();
         boolean isManager = authentication.getAuthorities().stream().anyMatch(authority -> SystemConstant.MANAGER_ROLE.equals(authority.getAuthority()));
         if(!isManager){
-            responseDTO.setMessage("Bạn không có quyên giao nhân viên");
+            responseDTO.setMessage("Bạn không có quyên xóa khách hàng");
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(responseDTO);
         }
         if(ids == null || ids.isEmpty()) {
-            throw new InvalidDataException("At lease one ID is required for deletion");
+            throw new InvalidDataException("Cần ít nhất 1 khách hàng để xóa");
         }
-        return ResponseEntity.ok().body(customerService.deleteBuilding(ids));
+        return ResponseEntity.ok().body(customerService.deleteCustomer(ids));
     }
 
     @PostMapping
@@ -106,12 +106,12 @@ public class CustomerAPI {
                     && userEntity.getCustomers().stream()
                     .anyMatch(assignCustomer -> assignCustomer.getId().equals(id));
             if(!isAssigned){
-                response.setMessage("Bạn không có quyền truy cập building này");
+                response.setMessage("Bạn không có quyền truy cập customer này");
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
             }
         }
         if(!isStaff && !isManager){
-            response.setMessage("Bạn không có quyền truy cập building này");
+            response.setMessage("Bạn không có quyền truy cập customer này");
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
         }
         customerDTO.setId(id);

@@ -2,6 +2,7 @@ package com.devon.building.service;
 
 
 import com.devon.building.model.dto.RegisterRequest;
+import com.devon.building.model.dto.PasswordDTO;
 import com.devon.building.model.dto.UserDTO;
 import com.devon.building.pagination.PaginationResult;
 import com.devon.building.repository.entity.UserEntity;
@@ -15,6 +16,8 @@ public interface UserService {
     void save(UserDTO userDTO);
 
     void update(UserDTO userDTO);
+
+    void changePassword(Long id, PasswordDTO passwordDTO);
 
     void delete(List<Long> ids);
     public Map<Long, String> loadStaff();

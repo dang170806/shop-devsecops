@@ -1,9 +1,11 @@
-package com.devon.building.service.impl;
+package com.devon.building.service;
 
 import com.devon.building.constant.SystemConstant;
 import com.devon.building.exception.InvalidDataException;
 import com.devon.building.model.dto.RegisterRequest;
+import com.devon.building.model.dto.PasswordDTO;
 import com.devon.building.model.dto.UserDTO;
+import com.devon.building.enums.UserRole;
 import com.devon.building.pagination.PaginationResult;
 import com.devon.building.repository.UserRepository;
 import com.devon.building.repository.entity.UserEntity;
@@ -27,20 +29,20 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-    @PersistenceContext
-    private EntityManager entityManager;
+    private final EntityManager entityManager;
     private final UserRepository userRepository;
 
     private final PasswordEncoder passwordEncoder;
 
     @Override
     public PaginationResult<UserEntity> listUserInfo(String key, int page, int maxResult, int maxNavigationPage) {
-        StringBuilder sql = new StringBuilder("SELECT NEW " + UserEntity.class.getName() + "(u.id, u.userName, u.active, u.userRole, u.fullName, u.phone) " + "FROM " + UserEntity.class.getName() + " u ");
-        StringBuilder countSql = new StringBuilder("SELECT COUNT(u.id) FROM " + UserEntity.class.getName() + " u ");
+        String from = " FROM " + UserEntity.class.getName() + " u WHERE u.active = true ";
+        StringBuilder sql = new StringBuilder("SELECT NEW " + UserEntity.class.getName() + "(u.id, u.userName, u.active, u.userRole, u.fullName, u.phone)" + from);
+        StringBuilder countSql = new StringBuilder("SELECT COUNT(u.id)" + from);
 
         if (key != null && !key.trim().isEmpty()) {
-            sql.append("WHERE (LOWER(u.userName) LIKE :key OR LOWER(u.fullName) LIKE :key OR LOWER(u.phone) LIKE :key) ");
-            countSql.append("WHERE (LOWER(u.userName) LIKE :key OR LOWER(u.fullName) LIKE :key OR LOWER(u.phone) LIKE :key) ");
+            sql.append("AND (LOWER(u.userName) LIKE :key OR LOWER(u.fullName) LIKE :key OR LOWER(u.phone) LIKE :key) ");
+            countSql.append("AND (LOWER(u.userName) LIKE :key OR LOWER(u.fullName) LIKE :key OR LOWER(u.phone) LIKE :key) ");
         }
 
         sql.append("ORDER BY u.userName DESC");
@@ -49,7 +51,7 @@ public class UserServiceImpl implements UserService {
         TypedQuery<Long> countQuery = entityManager.createQuery(countSql.toString(), Long.class);
 
         if (key != null && !key.trim().isEmpty()) {
-            String searchKey = "%" + key.toLowerCase() + "%";
+            String searchKey = "%" + key.trim().toLowerCase() + "%";
             query.setParameter("key", searchKey);
             countQuery.setParameter("key", searchKey);
         }
@@ -58,7 +60,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void save(UserDTO userDTO) {
-        String userName = userDTO.getUserName();
+        if (userDTO.getUserName() == null || userDTO.getUserName().isBlank()
+                || userDTO.getFullName() == null || userDTO.getFullName().isBlank()) {
+            throw new IllegalArgumentException("Username and full name are required");
+        }
+        String userName = userDTO.getUserName().trim();
         UserEntity user = null;
         if (userName != null && !userName.isEmpty()) {
             user = userRepository.findAllByUserNameAndActiveTrue(userName);
@@ -69,9 +75,9 @@ public class UserServiceImpl implements UserService {
         user = new UserEntity();
         user.setUserName(userName);
         user.setActive(true);
-        user.setFullName(userDTO.getFullName());
+        user.setFullName(userDTO.getFullName().trim());
         user.setEncrytedPassword(passwordEncoder.encode(SystemConstant.PASSWORD_DEFAULT));
-        user.setUserRole(UserEntity.ROLE_MANAGER);
+        user.setUserRole(resolveRole(userDTO.getRoleCode(), null));
         if (userDTO.getFileData() != null) {
             byte[] image = null;
             try {
@@ -89,17 +95,21 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void update(UserDTO userDTO) {
-        String userName = userDTO.getUserName();
-        UserEntity user = null;
-        if (userName != null && !userName.isEmpty()) {
-            user = userRepository.findAllByUserNameAndActiveTrue(userName);
+        String userName = userDTO.getUserName() == null ? null : userDTO.getUserName().trim();
+        if (userDTO.getFullName() == null || userDTO.getFullName().isBlank()) {
+            throw new IllegalArgumentException("Full name is required");
         }
+        UserEntity user = userDTO.getId() == null
+                ? (userName == null ? null : userRepository.findAllByUserNameAndActiveTrue(userName))
+                : userRepository.findById(userDTO.getId()).filter(UserEntity::isActive).orElse(null);
         if (user == null) {
             throw new EntityNotFoundException("Entity with name " + userName + " not found");
         }
-        user.setUserName(userName);
-        user.setActive(true);
-        user.setUserRole(userDTO.getRoleCode());
+        if (userName != null && !userName.equals(user.getUserName())) {
+            throw new IllegalArgumentException("Username cannot be changed");
+        }
+        user.setFullName(userDTO.getFullName().trim());
+        user.setUserRole(resolveRole(userDTO.getRoleCode(), user.getUserRole()));
         try {
             if (userDTO.getBase64Image() != null && !userDTO.getBase64Image().isEmpty()) {
                 String base64String = userDTO.getBase64Image();
@@ -110,6 +120,8 @@ public class UserServiceImpl implements UserService {
                 byte[] imageBytes = Base64.getDecoder().decode(base64String);
                 user.setImage(imageBytes);
             }
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid image data", e);
         } catch (Exception e) {
             throw new RuntimeException("Invalid image data", e);
         }
@@ -117,11 +129,30 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public void changePassword(Long id, PasswordDTO passwordDTO) {
+        UserEntity user = userRepository.findById(id).filter(UserEntity::isActive)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        if (passwordDTO.getOldPassword() == null
+                || !passwordEncoder.matches(passwordDTO.getOldPassword(), user.getEncrytedPassword())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+        if (passwordDTO.getNewPassword() == null || passwordDTO.getNewPassword().length() < 6) {
+            throw new IllegalArgumentException("New password must contain at least 6 characters");
+        }
+        if (!passwordDTO.getNewPassword().equals(passwordDTO.getConfirmPassword())) {
+            throw new IllegalArgumentException("Password confirmation does not match");
+        }
+        user.setEncrytedPassword(passwordEncoder.encode(passwordDTO.getNewPassword()));
+        userRepository.save(user);
+    }
+
+    @Override
     public void delete(List<Long> ids) {
         for (Long id : ids) {
-            Optional<UserEntity> user = userRepository.findById(id);
-            user.ifPresent(value -> value.setActive(false));
-            userRepository.flush();
+            userRepository.findById(id).ifPresent(user -> {
+                user.setActive(false);
+                userRepository.flush();
+            });
         }
     }
 
@@ -154,5 +185,14 @@ public class UserServiceImpl implements UserService {
         } catch (DataIntegrityViolationException e) {
             throw new InvalidDataException("Tên đăng nhập đã tồn tại");
         }
+    }
+
+    private String resolveRole(String roleCode, String defaultRole) {
+        String role = roleCode == null || roleCode.isBlank() ? defaultRole : roleCode.trim();
+        if (role == null || java.util.Arrays.stream(UserRole.values())
+                .noneMatch(userRole -> userRole.getCode().equals(role))) {
+            throw new IllegalArgumentException("A valid user role is required");
+        }
+        return role;
     }
 }

@@ -1,4 +1,4 @@
-package com.devon.building.service.impl;
+package com.devon.building.service;
 
 import com.devon.building.constant.SystemConstant;
 import com.devon.building.converter.CustomerConverter;
@@ -118,7 +118,7 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public ResponseDTO deleteBuilding(List<Long> ids) {
+    public ResponseDTO deleteCustomer(List<Long> ids) {
         ResponseDTO response = new ResponseDTO();
         ids.forEach(id -> {
             CustomerEntity customer = customerRepository.findByIdAndIsActiveTrue(id)

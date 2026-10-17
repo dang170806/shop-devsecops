@@ -3,8 +3,8 @@ package com.devon.building.config;
 
 import com.devon.building.security.CustomSuccessHandler;
 import com.devon.building.service.UserDetailsServiceImpl;
-import com.devon.building.service.impl.CustomGitHubOAuth2UserService;
-import com.devon.building.service.impl.CustomOidUserService;
+import com.devon.building.service.CustomGitHubOAuth2UserService;
+import com.devon.building.service.CustomOidUserService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -17,7 +17,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -46,6 +45,7 @@ public class WebSecurityConfig {
                                                    CustomGitHubOAuth2UserService customGitHubOAuth2UserService) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/admin/users", "/admin/users/**").hasRole("MANAGER")
                         .requestMatchers("/admin/**").hasAnyRole("STAFF", "MANAGER")
                         .requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/user/register").permitAll()
@@ -74,14 +74,20 @@ public class WebSecurityConfig {
                         .anyRequest().permitAll()
                 )
                 .exceptionHandling(ex -> ex
-                        .defaultAccessDeniedHandlerFor((request, response, exception) -> {
+                        .accessDeniedHandler((request, response, exception) -> {
+                            String contextPath = request.getContextPath();
+                            String requestPath = request.getRequestURI().substring(contextPath.length());
+                            if (requestPath.startsWith("/api/")) {
+                                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                                response.setContentType("application/json");
+                                response.setCharacterEncoding("UTF-8");
+                                response.getWriter().write(
+                                        "{\"data\":null,\"message\":\"Bạn không có quyền truy cập\",\"details\":[]}");
+                                return;
+                            }
                             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                            response.setContentType("application/json");
-                            response.setCharacterEncoding("UTF-8");
-                            response.getWriter().write(
-                                    "{\"data\":null,\"message\":\"Bạn không có quyền truy cập\",\"details\":[]}");
-                        }, PathPatternRequestMatcher.withDefaults().matcher("/api/**"))
-                        .accessDeniedPage("/403"))
+                            request.getRequestDispatcher("/403").forward(request, response);
+                        }))
                 .formLogin(form -> form
                                 .loginPage("/admin/login")
                                 .loginProcessingUrl("/j_spring_security_check")

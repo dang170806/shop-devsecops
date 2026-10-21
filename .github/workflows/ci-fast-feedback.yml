@@ -1,0 +1,64 @@
+name: CI Fast Feedback
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+      - 'dev/**'
+    paths:
+      - 'src/**'
+      - '.mvn/**'
+      - 'mvnw'
+      - 'mvnw.cmd'
+      - 'pom.xml'
+      - 'Dockerfile'
+      - '.github/workflows/**'
+      - '.github/scripts/**'
+  pull_request:
+    branches:
+      - main
+      - dev
+    paths:
+      - 'src/**'
+      - '.mvn/**'
+      - 'mvnw'
+      - 'mvnw.cmd'
+      - 'pom.xml'
+      - 'Dockerfile'
+      - '.github/workflows/**'
+      - '.github/scripts/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fast-feedback-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fast-feedback:
+    name: Fast feedback & Hadolint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Lint Dockerfile with Hadolint
+        uses: hadolint/hadolint-action@54c9adbab1582c2ef04b2016b760714a4bfde3cf # v3.1.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: error
+
+      - name: Set up Java
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Compile check
+        run: ./mvnw compile -B

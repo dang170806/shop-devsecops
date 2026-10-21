@@ -2,6 +2,7 @@ package com.devon.building.api;
 
 import com.devon.building.IntegrationTestBase;
 import com.devon.building.repository.CustomerRepository;
+import com.devon.building.repository.TransactionRepository;
 import com.devon.building.repository.UserRepository;
 import com.devon.building.repository.entity.CustomerEntity;
 import com.devon.building.repository.entity.UserEntity;
@@ -20,10 +21,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class PublicAPIIntegrationTestIT extends IntegrationTestBase {
     @Autowired private UserRepository userRepository;
     @Autowired private CustomerRepository customerRepository;
+    @Autowired private TransactionRepository transactionRepository;
     @Autowired private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void cleanDatabase() {
+        transactionRepository.deleteAll();
         customerRepository.deleteAll();
         jdbcTemplate.update("delete from assignmentbuilding");
         userRepository.deleteAll();

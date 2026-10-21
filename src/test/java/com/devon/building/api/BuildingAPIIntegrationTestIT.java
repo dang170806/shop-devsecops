@@ -35,6 +35,7 @@ class BuildingAPIIntegrationTestIT extends IntegrationTestBase {
     @BeforeEach
     void setUp() {
         buildingRepository.deleteAll();
+        jdbcTemplate.update("delete from assignmentcustomer");
         userRepository.deleteAll();
         building = new BuildingEntity();
         building.setName("Integration test building");

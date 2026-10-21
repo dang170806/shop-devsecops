@@ -51,7 +51,14 @@ jobs:
           exit-code: '0'
       - name: Calculate risk and generate summary
         if: always()
-        run: bash ./github/scripts/calculate_risk.sh
+        run: bash .github/scripts/calculate_risk.sh
+        env:
+          TESTS_OUTCOME: ${{ steps.tests.outcome }}
+          IMAGE_BUILD_OUTCOME: ${{ steps.image_build.outcome }}
+          TRIVY_OUTCOME: ${{ steps.trivy.outcome }}
+      - name: Enforce security gate
+        if: always()
+        run: bash .github/scripts/enforce_security_gate.sh
         env:
           TESTS_OUTCOME: ${{ steps.tests.outcome }}
           IMAGE_BUILD_OUTCOME: ${{ steps.image_build.outcome }}

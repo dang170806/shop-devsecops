@@ -1,10 +1,8 @@
 package com.devon.building;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class SpringShoppingCart2ApplicationTests {
+class SpringShoppingCart2ApplicationTests extends IntegrationTestBase {
 
 	@Test
 	void contextLoads() {

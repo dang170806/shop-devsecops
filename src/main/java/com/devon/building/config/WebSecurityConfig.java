@@ -2,9 +2,9 @@ package com.devon.building.config;
 
 
 import com.devon.building.security.CustomSuccessHandler;
-import com.devon.building.service.UserDetailsServiceImpl;
 import com.devon.building.service.CustomGitHubOAuth2UserService;
 import com.devon.building.service.CustomOidUserService;
+import com.devon.building.service.UserDetailsServiceImpl;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -33,8 +33,7 @@ public class WebSecurityConfig {
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService);
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }

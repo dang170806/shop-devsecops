@@ -4,6 +4,7 @@
 
 # Maven build outputs
 target/
+!target/app.jar
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
@@ -22,6 +23,10 @@ buildNumber.properties
 .classpath
 .settings/
 
+#env
+.env*
+#db
+*.sql
 # OS specific files
 Thumbs.db
 Desktop.ini

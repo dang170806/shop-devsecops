@@ -1,0 +1,38 @@
+name: shoe-shopping-cart
+
+services:
+  web:
+    build:
+      context: .
+    ports:
+      - "${APP_PORT:-9095}:9095"
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://db:3306/${DB_NAME:?Set DB_NAME in .env}"
+      SPRING_DATASOURCE_USERNAME: "${DB_USER:?Set DB_USER in .env}"
+      SPRING_DATASOURCE_PASSWORD: "${DB_PASSWORD:?Set DB_PASSWORD in .env}"
+      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
+      GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:-}"
+      GITHUB_CLIENT_ID: "${GITHUB_CLIENT_ID:-}"
+      GITHUB_CLIENT_SECRET: "${GITHUB_CLIENT_SECRET:-}"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.4.8@sha256:6ea90827b1100f8f2ae306a539f86d2c264a26ed435a2a9f75551dd5c3aeb242
+    environment:
+      MYSQL_DATABASE: "${DB_NAME:?Set DB_NAME in .env}"
+      MYSQL_USER: "${DB_USER:?Set DB_USER in .env}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:?Set DB_PASSWORD in .env}"
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in .env}"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - ./backupdb.sql:/docker-entrypoint-initdb.d/backupdb.sql:ro
+      - backup_data:/var/lib/mysql
+
+volumes:
+  backup_data:

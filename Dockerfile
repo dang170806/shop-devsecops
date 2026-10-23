@@ -1,12 +1,7 @@
-FROM maven:3.9-eclipse-temurin-17 AS build
+FROM eclipse-temurin:17-jre-alpine-3.24@sha256:a2e1cd0a400a97cf772159f5fff4e05088b4d20097379624cab1874a381ff6f1
 WORKDIR /app
-COPY pom.xml .
-RUN mvn dependency:go-offline
-COPY src ./src
-RUN mvn package -DskipTests
-
-FROM eclipse-temurin:17-jre-alpine
-WORKDIR /app
-COPY --from=build /app/target/shoe-ShoppingCart-0.0.1-SNAPSHOT.jar app.jar
+RUN addgroup -S app && adduser -S app -G app
+COPY --chown=app:app target/app.jar /app/app.jar
+USER app
 EXPOSE 9095
-CMD ["java","-jar","app.jar"]
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "/app/app.jar"]

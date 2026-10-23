@@ -41,7 +41,7 @@ jobs:
 
       - name: Run unit and integration tests
         id: tests
-        run: ./mvnw verify -B
+        run: ./mvnw clean verify -B
         env:
           GOOGLE_CLIENT_ID: ci-test-client
           GOOGLE_CLIENT_SECRET: ci-test-secret
@@ -61,6 +61,15 @@ jobs:
           output: trivy-result.json
           severity: CRITICAL,HIGH,MEDIUM
           exit-code: '0'
+
+      - name: Upload Trivy report
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: trivy-results-${{ github.run_id }}-${{ github.run_attempt }}
+          path: trivy-result.json
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Calculate risk and write summary
         if: always()

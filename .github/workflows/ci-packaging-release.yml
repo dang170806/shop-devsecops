@@ -1,17 +1,21 @@
 name: CI Package Release Artifact
+
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
   workflow_dispatch:
+
 permissions:
   contents: read
+
 concurrency:
   group: package-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
+
 jobs:
   package:
-    name: Verify and package application
+    name: Verify and package release ref
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
@@ -21,26 +25,31 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
       - name: Set up Java
         uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '17'
-          cache: 'maven'
-      - name: Make maven wrapper executable
+          cache: maven
+
+      - name: Make Maven Wrapper executable
         run: chmod +x ./mvnw
+
       - name: Verify and package
         id: tests
-        run: ./mvnw verify -B
+        run: ./mvnw clean verify -B
         env:
           GOOGLE_CLIENT_ID: ci-test-client
           GOOGLE_CLIENT_SECRET: ci-test-secret
           GITHUB_CLIENT_ID: ci-test-client
           GITHUB_CLIENT_SECRET: ci-test-secret
+
       - name: Build image for scanning
         id: image_build
-        run: docker build -t local/shopping-cart:${{ github.sha }} .
-      - name: Scan image with trivy
+        run: docker build --tag local/shopping-cart:${{ github.sha }} .
+
+      - name: Scan image with Trivy
         id: trivy
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -49,13 +58,24 @@ jobs:
           output: trivy-result.json
           severity: CRITICAL,HIGH,MEDIUM
           exit-code: '0'
-      - name: Calculate risk and generate summary
+
+      - name: Upload Trivy report
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: trivy-results-${{ github.run_id }}-${{ github.run_attempt }}
+          path: trivy-result.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Calculate risk and write summary
         if: always()
         run: bash .github/scripts/calculate_risk.sh
         env:
           TESTS_OUTCOME: ${{ steps.tests.outcome }}
           IMAGE_BUILD_OUTCOME: ${{ steps.image_build.outcome }}
           TRIVY_OUTCOME: ${{ steps.trivy.outcome }}
+
       - name: Enforce security gate
         if: always()
         run: bash .github/scripts/enforce_security_gate.sh
@@ -63,10 +83,11 @@ jobs:
           TESTS_OUTCOME: ${{ steps.tests.outcome }}
           IMAGE_BUILD_OUTCOME: ${{ steps.image_build.outcome }}
           TRIVY_OUTCOME: ${{ steps.trivy.outcome }}
-      - name: Upload application JAR
+
+      - name: Upload verified application JAR
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
-          name: shopping-cart-${{ github.run_id }}-${{ github.run_attempt }}
-          path: target/*.jar
+          name: shoe-shopping-cart-${{ github.run_id }}-${{ github.run_attempt }}
+          path: target/app.jar
           if-no-files-found: error
           retention-days: 14

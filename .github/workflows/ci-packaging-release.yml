@@ -18,7 +18,9 @@ jobs:
     name: Verify and package release ref
     runs-on: ubuntu-24.04
     timeout-minutes: 45
-    permissions: write
+    permissions:
+      contents: read
+      packages: write
     env:
       RISK_SCORE_THRESHOLD: '10'
     steps:
@@ -92,7 +94,8 @@ jobs:
           path: target/app.jar
           if-no-files-found: error
           retention-days: 14
-            - name: Log in to GitHub Container Registry
+
+      - name: Log in to GitHub Container Registry
         if: startsWith(github.ref, 'refs/tags/v')
         uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:

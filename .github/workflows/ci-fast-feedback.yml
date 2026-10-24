@@ -15,7 +15,6 @@ on:
       - 'compose.yaml'
       - '.dockerignore'
       - '.env.example'
-      - 'backupdb.sql'
       - '.github/workflows/**'
       - '.github/scripts/**'
   pull_request:
@@ -32,7 +31,6 @@ on:
       - 'compose.yaml'
       - '.dockerignore'
       - '.env.example'
-      - 'backupdb.sql'
       - '.github/workflows/**'
       - '.github/scripts/**'
   workflow_dispatch:

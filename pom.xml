@@ -3,10 +3,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.example</groupId>
-    <artifactId>shoe-ShoppingCart</artifactId>
+    <artifactId>ShoppingCart</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>shoe-ShopingCart</name>
-    <description>shoe Shopping Cart</description>
+    <name>ShopingCart</name>
+    <description>Shopping Cart</description>
 
     <parent>
         <groupId>org.springframework.boot</groupId>

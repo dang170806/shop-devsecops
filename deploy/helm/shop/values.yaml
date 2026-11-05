@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/dang170806/shop-devsecops
-  tag: v0.0.3
+  tag: v0.0.4
   pullPolicy: IfNotPresent
 
 secretName: shop-secrets

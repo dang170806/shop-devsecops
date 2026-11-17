@@ -18,11 +18,13 @@ Pipeline CI/CD tích hợp kiểm tra bảo mật tự động (DevSecOps) cho m
 6. [Kiểm thử](#kiểm-thử)
 7. [Pipeline CI/CD](#pipeline-cicd)
 8. [Security gate và mô hình chấm điểm rủi ro](#security-gate-và-mô-hình-chấm-điểm-rủi-ro)
-9. [Quy trình phát hành](#quy-trình-phát-hành)
-10. [Biện pháp bảo mật chuỗi cung ứng](#biện-pháp-bảo-mật-chuỗi-cung-ứng)
-11. [Cấu trúc thư mục](#cấu-trúc-thư-mục)
-12. [Lộ trình](#lộ-trình)
-13. [Xử lý sự cố thường gặp](#xử-lý-sự-cố-thường-gặp)
+9. [Nhiệm vụ 4: kiểm toán CIS và báo cáo bảo mật](#nhiệm-vụ-4-kiểm-toán-cis-và-báo-cáo-bảo-mật)
+10. [Nhiệm vụ 5: giám sát và diễn tập sự cố](#nhiệm-vụ-5-giám-sát-và-diễn-tập-sự-cố)
+11. [Quy trình phát hành](#quy-trình-phát-hành)
+12. [Biện pháp bảo mật chuỗi cung ứng](#biện-pháp-bảo-mật-chuỗi-cung-ứng)
+13. [Cấu trúc thư mục](#cấu-trúc-thư-mục)
+14. [Lộ trình](#lộ-trình)
+15. [Xử lý sự cố thường gặp](#xử-lý-sự-cố-thường-gặp)
 
 ## Tổng quan kiến trúc
 
@@ -32,7 +34,11 @@ flowchart LR
     Dev -->|"pull request / push main"| SG["CI Security Gate"]
     Dev -->|"git tag v*"| REL["CI Package Release"]
     REL -->|"gate pass"| GHCR[("ghcr.io")]
-    GHCR -.->|"Nhiệm vụ 3"| K8S["Argo CD + Kubernetes local"]
+    GHCR --> ARGO["Argo CD"]
+    ARGO --> K8S["Kubernetes local"]
+    K8S --> KB["kube-bench CIS audit"]
+    K8S --> PROM["Prometheus"]
+    PROM --> GRAF["Grafana dashboards + alerts"]
 ```
 
 Ba workflow tách theo thời điểm kích hoạt: phản hồi nhanh khi đang code, kiểm tra bảo mật đầy đủ trước khi vào `main`, và đóng gói phát hành khi gắn tag. Image chỉ được đẩy lên registry khi toàn bộ test và security gate đã qua.
@@ -41,13 +47,15 @@ Ba workflow tách theo thời điểm kích hoạt: phản hồi nhanh khi đang
 
 | Thành phần | Công nghệ |
 |---|---|
-| Ứng dụng | Java 17, Spring Boot 4.0.x, Spring Data JPA, Spring Security (OAuth2 Google/GitHub), Thymeleaf |
+| Ứng dụng | Java 17, Spring Boot 4.0.x, Spring Data JPA, Spring Security (OAuth2 Google/GitHub), Thymeleaf, Actuator |
 | Cơ sở dữ liệu | MySQL 8.4 (chạy bằng Docker Compose) |
 | Build | Maven (Maven Wrapper `mvnw`) |
 | Container | Docker, Docker Compose |
 | CI/CD | GitHub Actions |
 | Lint Dockerfile | Hadolint |
 | Quét lỗ hổng image | Trivy |
+| Kiểm tra CIS Kubernetes | kube-bench 0.16.0 |
+| Giám sát local | Prometheus, Grafana qua kube-prometheus-stack 93.2.2 |
 | Test | JUnit 5, Mockito, Spring MockMvc, Testcontainers |
 | Registry | GitHub Container Registry (`ghcr.io`) |
 | Cập nhật phụ thuộc | Dependabot (GitHub Actions và Docker) |
@@ -193,6 +201,61 @@ Ví dụ minh hoạ cách tính (không phải kết quả quét thật):
 
 **Fail-closed:** thiếu file kết quả, JSON sai định dạng hoặc không đếm được lỗ hổng đều coi là `999` điểm và FAIL. Cổng không bao giờ pass chỉ vì quét lỗi. Đây là bài học từ một bản nháp đầu của script: lệnh `|| echo 0` che lỗi của `jq` làm gate luôn pass dù không đọc được kết quả.
 
+## Nhiệm vụ 4: kiểm toán CIS và báo cáo bảo mật
+
+Nhiệm vụ này bổ sung kiểm tra cấu hình cluster local bằng kube-bench và ghép kết quả đó với báo cáo quét image từ Trivy. Báo cáo giữ riêng hai loại kết quả: CVE của image và trạng thái kiểm tra CIS. `WARN` từ kube-bench yêu cầu người vận hành xem lại thủ công, không bị gán nhãn CVE.
+
+Job trong [`deploy/k8s-plain/kube-bench-job.yaml`](deploy/k8s-plain/kube-bench-job.yaml) chạy trên node control-plane của cụm Linux local. Để kiểm tra file cấu hình node, job dùng `hostPID` và mount các đường dẫn host ở chế độ chỉ đọc. Vì vậy script tạo namespace `security-audit` riêng và giới hạn ngoại lệ Pod Security ở namespace đó. Kube-bench là công cụ kiểm toán chỉ đọc; không tự sửa cấu hình cluster.
+
+Tạo báo cáo Trivy cho image đang chạy trong cluster, sau đó chạy kube-bench và ghép kết quả:
+
+```powershell
+New-Item -ItemType Directory -Force artifacts/security | Out-Null
+trivy image --format json --output artifacts/security/trivy-result.json ghcr.io/dang170806/shop-devsecops:<tag-dang-chạy>
+.\tools\run-kube-bench.ps1 -TrivyReport artifacts/security/trivy-result.json
+```
+
+Script lưu JSON gốc và báo cáo tổng hợp có thời gian chạy trong `artifacts/security/`. Báo cáo chặn khi Trivy có Critical, Risk Score đạt ngưỡng, hoặc kube-bench có check `FAIL`; `WARN` được đánh dấu để review thủ công. Quy tắc này là policy của đồ án, không phải thang severity chính thức của CIS.
+
+Kube-bench audit từ node control-plane phù hợp với cụm kind một node. Nếu cụm local có nhiều worker, cần chạy audit tương ứng trên từng node trước khi kết luận phạm vi toàn cluster. Kết quả local là ảnh chụp cấu hình tại thời điểm chạy, không phải bằng chứng cho mọi node nếu chưa quét chúng.
+
+## Nhiệm vụ 5: giám sát và diễn tập sự cố
+
+Stack Prometheus/Grafana được quản lý bằng Argo CD riêng, dùng chart `kube-prometheus-stack` đã ghim phiên bản. Thứ tự triển khai:
+
+1. Tạo Application giám sát: `kubectl apply -f deploy/argocd/monitoring-application.yaml`.
+2. Chờ Prometheus, Grafana và các CRD `ServiceMonitor`/`PrometheusRule` sẵn sàng.
+3. Đổi `observability.enabled` thành `true` trong `deploy/helm/shop/values.yaml`, commit/push để Argo CD đồng bộ service metrics, dashboard và cảnh báo của ứng dụng.
+
+Actuator xuất `/actuator/prometheus` trên cổng quản trị `9096`. Cổng này có Service `ClusterIP` riêng và chỉ mở endpoint health/metrics ở chế độ read-only. Kubernetes dùng health endpoint cho startup, liveness và readiness probe. Prometheus theo dõi request rate, tỷ lệ HTTP 5xx, độ trễ p95, JVM heap, số replica sẵn sàng và mức dùng bộ nhớ container.
+
+Mở Grafana trong máy local:
+
+```powershell
+kubectl port-forward -n monitoring svc/monitoring-grafana 3000:80
+```
+
+Mở `http://localhost:3000`, username `admin`. Lấy password ban đầu từ Secret:
+
+```powershell
+$encoded = (kubectl get secret -n monitoring monitoring-grafana -o jsonpath='{.data.admin-password}').Trim()
+[System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($encoded))
+```
+
+Dashboard **Shop application overview** được nạp từ ConfigMap trong Helm chart. PrometheusRule tạo cảnh báo khi mất target metrics, thiếu replica khả dụng hoặc tỷ lệ 5xx cao. Các rule và dashboard nằm trong repo để Argo CD dựng lại được.
+
+### Diễn tập lỗi và postmortem
+
+Diễn tập trên local bằng cách scale ứng dụng về 0. Thao tác này gây gián đoạn ngắn; Argo CD đã bật self-heal nên sẽ đưa replicas trở lại giá trị Git.
+
+```powershell
+kubectl scale deployment/shop -n shop --replicas=0
+kubectl get pods -n shop -w
+kubectl get applications -n argocd shop -w
+```
+
+Theo dõi cảnh báo `ShopReplicasUnavailable` trong Grafana/Alertmanager, ghi thời điểm phát hiện và thời điểm app phục hồi, sau đó xác nhận Argo CD trở lại `Synced` và đủ replicas. Ghi kết quả vào [`docs/incident-postmortem-template.md`](docs/incident-postmortem-template.md); dùng số liệu quan sát được, không điền số giả định.
+
 ## Quy trình phát hành
 
 ```powershell
@@ -240,6 +303,12 @@ docker pull ghcr.io/dang170806/shop-devsecops:v0.0.1
 │       ├── ci-security-gate.yml
 │       └── ci-packaging-release.yml
 ├── src/                                # mã nguồn Java và test
+├── deploy/
+│   ├── argocd/                          # Application cho shop và monitoring
+│   ├── helm/shop/                       # app, health probes, ServiceMonitor, alert rules, dashboard
+│   └── k8s-plain/                       # manifests và Job kube-bench
+├── tools/                               # chạy CIS audit và ghép báo cáo
+├── docs/                                # mẫu postmortem
 ├── Dockerfile
 ├── compose.yaml                        # ứng dụng + MySQL
 ├── backupdb.sql                        # dữ liệu khởi tạo
@@ -253,9 +322,9 @@ docker pull ghcr.io/dang170806/shop-devsecops:v0.0.1
 
 - [x] **Nhiệm vụ 1:** ứng dụng và Docker (Dockerfile, Compose, xử lý secret bị lộ)
 - [x] **Nhiệm vụ 2:** CI pipeline, test, Hadolint, Trivy, security gate, phát hành image lên `ghcr.io`
-- [ ] **Nhiệm vụ 3:** Kubernetes local (kind/minikube), Helm chart, Argo CD (GitOps)
-- [ ] **Nhiệm vụ 4:** tích hợp kube-bench, hoàn thiện báo cáo bảo mật tổng hợp
-- [ ] **Nhiệm vụ 5:** giám sát (Prometheus, Grafana) và bài tập mô phỏng sự cố (failure drill)
+- [x] **Nhiệm vụ 3:** triển khai Kubernetes local bằng Helm và đồng bộ GitOps qua Argo CD
+- [ ] **Nhiệm vụ 4:** chạy kube-bench trên node local, lưu JSON, ghép báo cáo với Trivy, áp dụng policy pass/fail và ghi nhận việc khắc phục/review
+- [ ] **Nhiệm vụ 5:** triển khai kube-prometheus-stack qua Argo CD, thu metrics ứng dụng và cluster, tạo dashboard/cảnh báo, diễn tập lỗi và hoàn thiện postmortem có số liệu thực tế
 
 ## Xử lý sự cố thường gặp
 
